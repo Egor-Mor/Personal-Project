@@ -14,11 +14,15 @@
         footer{
             background-color: darkcyan ;
         }
+        .card{
+            background-color: aliceblue;
+            width: auto
+        }
     </style>
 </head>
 <body>
     <div id="header" class="container-md border-bottom rounded shadow" bis_skin_checked="1">
-        <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+        <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4">
             <div class="col-md-3 mb-2 mb-md-0" bis_skin_checked="1">
                 <a href="/" class="d-inline-flex link-body-emphasis text-decoration-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-controller" viewBox="0 0 16 16">
@@ -29,15 +33,15 @@
             </div>
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
                 <li>
-                    <a href="/" class="nav-link px-2">Home</a>
+                    <a href="{{url_for('index')}}" class="nav-link px-2">Home</a>
                 </li>
                 <li>
-                    <a href="/about" class="nav-link px-2">About</a>
+                    <a href="{{url_for('about')}}" class="nav-link px-2">About</a>
                 </li>
             </ul>
             <div class="col-md-3 text-end" bis_skin_checked="1">
-                <a href='/login' role="button" class="btn btn-outline-primary">Login</a>
-                <a href='/login' role="button" class="btn btn-outline-primary">Sign-up</a>
+                <a href="{{url_for('login')}}" role="button" class="btn btn-outline-primary">Login</a>
+                <a href="{{url_for('register')}}" role="button" class="btn btn-outline-primary">Sign-up</a>
             </div>
         </header>
     </div>
@@ -45,7 +49,7 @@
 
     {% block content %}{% endblock %}
 
-    <footer class="footer d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top bg-body-tertiary"> 
+    <footer class="footer d-flex flex-wrap justify-content-between py-3 my-0 border-top"> 
         <div class="col-md-4 d-flex align-items-center" bis_skin_checked="1"> 
             <a href="/" class="mb-3 me-2 mb-md-0 text-body-secondary text-decoration-none lh-1" aria-label="Bootstrap"> 
                 <svg class="bi" width="30" height="24" aria-hidden="true">
