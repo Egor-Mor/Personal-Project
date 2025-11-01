@@ -1,0 +1,5 @@
+python-dotenv
+flask
+wtforms
+werkzeug
+Flask-Login
