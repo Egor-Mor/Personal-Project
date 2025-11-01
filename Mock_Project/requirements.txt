@@ -1,5 +1,7 @@
 python-dotenv
 flask
+flask-wtf
+flask-sqlalchemy
 wtforms
 werkzeug
 Flask-Login
