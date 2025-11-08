@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Login page{% endblock %}
 {% block content %}
-    <div class="container-fluid align-items-start">
-        <div class="card align-items-start p-3 m-2 shadow">
-            <h2 class="card-title">Login form</h2>
+    <div class="row col-lg-3 col-md-8 col-xxs-12 mx-auto my-2">
+        <div class="card p-3 m-0 shadow">
+            <h2 class="card-title">{% block l_r %}{% endblock %}</h2>
             <form method="post" class="align-items-start px-2">
                 <div class="form-group mb-3">
                     <label for="username-input" class="form-label">Username</label>
@@ -15,6 +15,7 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
+            {% block xtralnk %}{% endblock %}
         </div>
     </div>
 {% endblock %}
