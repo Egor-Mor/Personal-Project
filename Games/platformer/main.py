@@ -117,25 +117,34 @@ class Game:
     def render_win(self):
         self.screen.fill((50, 150, 50))
 
-        font_title = pygame.font.Font(None, 72)
-        font_text = pygame.font.Font(None, 36)
+        # Calculate responsive font sizes and positions
+        screen_w = self.screen.get_width()
+        screen_h = self.screen.get_height()
+
+        title_size = min(72, screen_w // 8)
+        text_size = min(36, screen_w // 15)
+
+        font_title = pygame.font.Font(None, title_size)
+        font_text = pygame.font.Font(None, text_size)
 
         title = font_title.render("LEVEL COMPLETE!", True, (255, 255, 255))
-        title_rect = title.get_rect(center=(self.screen.get_width() // 2, 150))
+        title_rect = title.get_rect(center=(screen_w // 2, screen_h * 0.2))
         self.screen.blit(title, title_rect)
 
         stars = font_text.render(f"Stars: {self.player.stars_collected}/{self.current_map.total_stars}", True,
                                  (255, 215, 0))
-        stars_rect = stars.get_rect(center=(self.screen.get_width() // 2, 220))
+        stars_rect = stars.get_rect(center=(screen_w // 2, screen_h * 0.35))
         self.screen.blit(stars, stars_rect)
 
-        # Buttons
-        btn_width = 250
-        btn_x = self.screen.get_width() // 2 - btn_width // 2
+        # Buttons - responsive sizing
+        btn_width = min(250, screen_w - 100)
+        btn_height = min(50, screen_h // 12)
+        btn_x = screen_w // 2 - btn_width // 2
+        btn_spacing = btn_height + 20
 
-        restart_btn = Button(btn_x, 300, btn_width, 50, "RESTART", (70, 130, 180))
-        next_btn = Button(btn_x, 370, btn_width, 50, "NEXT LEVEL", (70, 180, 70))
-        menu_btn = Button(btn_x, 440, btn_width, 50, "MENU", (180, 130, 70))
+        restart_btn = Button(btn_x, int(screen_h * 0.5), btn_width, btn_height, "RESTART", (70, 130, 180))
+        next_btn = Button(btn_x, int(screen_h * 0.5) + btn_spacing, btn_width, btn_height, "NEXT LEVEL", (70, 180, 70))
+        menu_btn = Button(btn_x, int(screen_h * 0.5) + btn_spacing * 2, btn_width, btn_height, "MENU", (180, 130, 70))
 
         mouse_pos = pygame.mouse.get_pos()
         restart_btn.check_hover(mouse_pos)
@@ -151,18 +160,25 @@ class Game:
     def render_dead(self):
         self.screen.fill((100, 50, 50))
 
-        font_title = pygame.font.Font(None, 72)
+        # Calculate responsive font sizes and positions
+        screen_w = self.screen.get_width()
+        screen_h = self.screen.get_height()
+
+        title_size = min(72, screen_w // 8)
+        font_title = pygame.font.Font(None, title_size)
 
         title = font_title.render("YOU DIED!", True, (255, 100, 100))
-        title_rect = title.get_rect(center=(self.screen.get_width() // 2, 150))
+        title_rect = title.get_rect(center=(screen_w // 2, screen_h * 0.3))
         self.screen.blit(title, title_rect)
 
-        # Buttons
-        btn_width = 250
-        btn_x = self.screen.get_width() // 2 - btn_width // 2
+        # Buttons - responsive sizing
+        btn_width = min(250, screen_w - 100)
+        btn_height = min(50, screen_h // 12)
+        btn_x = screen_w // 2 - btn_width // 2
+        btn_spacing = btn_height + 20
 
-        restart_btn = Button(btn_x, 300, btn_width, 50, "RESTART", (70, 130, 180))
-        menu_btn = Button(btn_x, 370, btn_width, 50, "MENU", (180, 130, 70))
+        restart_btn = Button(btn_x, int(screen_h * 0.5), btn_width, btn_height, "RESTART", (70, 130, 180))
+        menu_btn = Button(btn_x, int(screen_h * 0.5) + btn_spacing, btn_width, btn_height, "MENU", (180, 130, 70))
 
         mouse_pos = pygame.mouse.get_pos()
         restart_btn.check_hover(mouse_pos)
@@ -234,7 +250,7 @@ class Game:
                     self.state = STATE_WIN
 
                 # Check death
-                if self.player.check_death(self.current_map.height):
+                if self.player.check_death(self.current_map.height, self.current_map.spikes):
                     self.state = STATE_DEAD
 
             # Rendering

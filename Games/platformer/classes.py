@@ -103,11 +103,21 @@ class Player:
 
                     self.sprite.update_position(self.x, self.y)
 
-    def check_death(self, map_height):
+    def check_death(self, map_height, spikes):
         # Fall out of map
         if self.y > map_height * 32 + 100:
             self.alive = False
             return True
+
+        # Check collision with spikes
+        for spike in spikes:
+            if (self.x < spike.x + spike.width and
+                    self.x + self.width > spike.x and
+                    self.y < spike.y + spike.height and
+                    self.y + self.height > spike.y):
+                self.alive = False
+                return True
+
         return False
 
     def reset(self, spawn_x, spawn_y):
@@ -185,6 +195,7 @@ class Map:
     def __init__(self, map_file):
         self.tiles = []
         self.stars = []
+        self.spikes = []
         self.width = 0
         self.height = 0
         self.player_spawn_x = 64
@@ -211,6 +222,10 @@ class Map:
                             star = Star(x * 32, y * 32)
                             self.stars.append(star)
                             self.total_stars += 1
+                        elif char == '5':
+                            tile = Tile(char, x * 32, y * 32)
+                            self.spikes.append(tile)
+                            self.tiles.append(tile)
                         elif char != '0' and char != ' ':
                             tile = Tile(char, x * 32, y * 32)
                             self.tiles.append(tile)
