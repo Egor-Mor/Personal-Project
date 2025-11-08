@@ -1,127 +1,198 @@
 import pygame
 
 class Sprite:
-    image = None
-    current_frame = 0
-    frame_time = 0
+    def __init__(self, img_route, x=0, y=0):
+        self.image = pygame.image.load(img_route)
+        self.x = x
+        self.y = y
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
 
-    def __init__(self, img_route, hitbox=None):
-        self.imgs = []
-        self.img_route = img_route
-        if isinstance(hitbox, (list, tuple)) and len(hitbox) == 2:
-            self.x = hitbox[0]
-            self.y = hitbox[1]
-        self.image = pygame.image.load(self.img_route)
-        self.imgs.append(self.image)
+    def display(self, window, camera_x=0, camera_y=0):
+        window.blit(self.image, (self.x - camera_x, self.y - camera_y))
 
-    def add_anim_stage(self, anim_img_route):
-        anim_img = pygame.image.load(anim_img_route)
-        self.imgs.append(anim_img)
+    def update_position(self, x, y):
+        self.x = x
+        self.y = y
+        self.rect.x = x
+        self.rect.y = y
 
-    def animate(self, anim_time):
-        self.frame_time += clock.get_time()
-        if self.frame_time >= anim_time * 1000:
-            self.current_frame = (self.current_frame + 1) % len(self.imgs)
-            self.image = self.imgs[self.current_frame]
-            self.frame_time = 0
 
-    def display(self, window, x, y):
-        window.blit(self.image, (x, y))
+class Player:
+    def __init__(self, x, y):
+        self.sprite = Sprite("img/player.png", x, y)
+        self.x = x
+        self.y = y
+        self.vel_x = 0
+        self.vel_y = 0
+        self.on_ground = False
+        self.width = 32
+        self.height = 32
+        self.speed = 5
+        self.jump_power = 12
+        self.gravity = 0.8
+        self.max_fall_speed = 15
 
-class Square:
-    def __init__(self, coords:tuple, alive=False):
-        self.status = alive
-        self.coords = coords
-        if self.status:
-            self.sprite = Sprite("img/sq-white.png")
+    def move(self, keys, tiles):
+        # Horizontal movement
+        self.vel_x = 0
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.vel_x = -self.speed
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.vel_x = self.speed
+
+        # Apply horizontal movement
+        self.x += self.vel_x
+        self.sprite.update_position(self.x, self.y)
+        self.check_collision_x(tiles)
+
+        # Jumping
+        if (keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]) and self.on_ground:
+            self.vel_y = -self.jump_power
+            self.on_ground = False
+
+        # Apply gravity
+        self.vel_y += self.gravity
+        if self.vel_y > self.max_fall_speed:
+            self.vel_y = self.max_fall_speed
+
+        # Apply vertical movement
+        self.y += self.vel_y
+        self.sprite.update_position(self.x, self.y)
+        self.on_ground = False
+        self.check_collision_y(tiles)
+
+    def check_collision_x(self, tiles):
+        for tile in tiles:
+            if tile.solid:
+                if (self.x < tile.x + tile.width and
+                    self.x + self.width > tile.x and
+                    self.y < tile.y + tile.height and
+                    self.y + self.height > tile.y):
+                    
+                    if self.vel_x > 0:  # Moving right
+                        self.x = tile.x - self.width
+                    elif self.vel_x < 0:  # Moving left
+                        self.x = tile.x + tile.width
+                    
+                    self.sprite.update_position(self.x, self.y)
+                    self.vel_x = 0
+
+    def check_collision_y(self, tiles):
+        for tile in tiles:
+            if tile.solid:
+                if (self.x < tile.x + tile.width and
+                    self.x + self.width > tile.x and
+                    self.y < tile.y + tile.height and
+                    self.y + self.height > tile.y):
+                    
+                    if self.vel_y > 0:  # Falling down
+                        self.y = tile.y - self.height
+                        self.vel_y = 0
+                        self.on_ground = True
+                    elif self.vel_y < 0:  # Jumping up
+                        self.y = tile.y + tile.height
+                        self.vel_y = 0
+                    
+                    self.sprite.update_position(self.x, self.y)
+
+    def render(self, window, camera_x, camera_y):
+        self.sprite.display(window, camera_x, camera_y)
+
+
+class Tile:
+    def __init__(self, tile_type, x, y):
+        self.type = tile_type
+        self.x = x
+        self.y = y
+        self.width = 32
+        self.height = 32
+        self.solid = True
+        
+        if tile_type == "1":  # Ground/Dirt
+            self.sprite = Sprite("img/ground.png", x, y)
+        elif tile_type == "2":  # Grass
+            self.sprite = Sprite("img/grass.png", x, y)
+        elif tile_type == "3":  # Stone
+            self.sprite = Sprite("img/stone.png", x, y)
+        elif tile_type == "4":  # Platform (one-way)
+            self.sprite = Sprite("img/platform.png", x, y)
+            self.solid = True
+        elif tile_type == "5":  # Spike/Hazard
+            self.sprite = Sprite("img/spike.png", x, y)
+            self.solid = False
         else:
-            self.sprite = Sprite("img/sq-black.png")
+            self.sprite = None
+            self.solid = False
 
-    def render(self, window):
-        if self.status:
-            self.sprite.image = pygame.image.load("img/sq-white.png")
-        else:
-            self.sprite.image = pygame.image.load("img/sq-black.png")
-        self.sprite.display(window, (20 + self.coords[0] * 15), (20 + self.coords[1] * 15))
-
-    def toggle(self):
-        self.status = bool(abs(self.status - 1))
+    def render(self, window, camera_x, camera_y):
+        if self.sprite:
+            self.sprite.display(window, camera_x, camera_y)
 
 
-class Field:
-    def __init__(self, Square, window):
-        self.field = []
-        self.running = False
-        self.window = window
-        for x in range(20):
-            self.field.append([])
-            for y in range(20):
-                self.field[x].append(Square((x,y)))
+class Map:
+    def __init__(self, map_file):
+        self.tiles = []
+        self.width = 0
+        self.height = 0
+        self.player_spawn_x = 64
+        self.player_spawn_y = 64
+        self.load_map(map_file)
 
-    def render_field(self):
-        for row in self.field:
-            for box in row:
-                box.render(self.window)
+    def load_map(self, map_file):
+        try:
+            with open(map_file, 'r') as f:
+                lines = f.readlines()
+                self.height = len(lines)
+                
+                for y, line in enumerate(lines):
+                    line = line.strip()
+                    if len(line) > self.width:
+                        self.width = len(line)
+                    
+                    for x, char in enumerate(line):
+                        if char == 'P':  # Player spawn point
+                            self.player_spawn_x = x * 32
+                            self.player_spawn_y = y * 32
+                        elif char != '0' and char != ' ':  # Not empty space
+                            tile = Tile(char, x * 32, y * 32)
+                            self.tiles.append(tile)
+        except FileNotFoundError:
+            print(f"Map file {map_file} not found!")
+            self.create_default_map()
 
-    def click_check(self, mouse):
-        for row in self.field:
-            for box in row:
-                if (20 + box.coords[0] * 15) <= mouse[0] <= (35 + box.coords[0] * 15) and (20 + box.coords[1] * 15) <= mouse[1] <= (35 + box.coords[1] * 15):
-                    box.toggle()
+    def create_default_map(self):
+        # Create a simple default map if file not found
+        for x in range(25):
+            self.tiles.append(Tile("1", x * 32, 15 * 32))
 
-    def run(self):
-        toggle = []
-        for x, row in enumerate(self.field):
-            for y, box in enumerate(row):
-                neighbours = 0
-                if 19 > x > 0:
-                    neighbours += self.field[x - 1][y].status + self.field[x + 1][y].status
-                    if 19 > y > 0:
-                        neighbours += self.field[x - 1][y + 1].status + self.field[x - 1][y - 1].status + self.field[x][y + 1].status + self.field[x][y - 1].status + self.field[x + 1][y - 1].status + self.field[x + 1][y + 1].status
-                    elif y == 19:
-                        neighbours += self.field[x - 1][y - 1].status + self.field[x][y - 1].status + self.field[x + 1][y - 1].status
-                    elif y == 0:
-                        neighbours += self.field[x - 1][y + 1].status + self.field[x][y + 1].status + self.field[x + 1][y + 1].status
-
-                elif x == 7:
-                    neighbours += self.field[x - 1][y].status
-                    if 19 > y > 0:
-                        neighbours += self.field[x - 1][y + 1].status + self.field[x - 1][y - 1].status + self.field[x][y + 1].status + self.field[x][y - 1].status
-                    elif y == 19:
-                        neighbours += self.field[x - 1][y - 1].status + self.field[x][y - 1].status
-                    elif y == 0:
-                        neighbours += self.field[x - 1][y + 1].status + self.field[x][y + 1].status
-
-                elif x == 0:
-                    neighbours += self.field[x + 1][y].status
-                    if 19 > y > 0:
-                        neighbours += self.field[x + 1][y + 1].status + self.field[x + 1][y - 1].status + self.field[x][y + 1].status + self.field[x][y - 1].status
-                    elif y == 19:
-                        neighbours += self.field[x + 1][y - 1].status + self.field[x][y - 1].status
-                    elif y == 0:
-                        neighbours += self.field[x + 1][y + 1].status + self.field[x][y + 1].status
-
-                if box.status and (neighbours < 2 or neighbours > 3):
-                    toggle.append((x, y))
-                elif bool(abs(box.status - 1)) and neighbours == 3:
-                    toggle.append((x, y))
+    def render(self, window, camera_x, camera_y):
+        for tile in self.tiles:
+            # Only render tiles that are visible on screen
+            if (tile.x - camera_x > -32 and tile.x - camera_x < 800 and
+                tile.y - camera_y > -32 and tile.y - camera_y < 600):
+                tile.render(window, camera_x, camera_y)
 
 
-        for element in toggle:
-            self.field[element[0]][element[1]].toggle()
+class Camera:
+    def __init__(self, width, height):
+        self.x = 0
+        self.y = 0
+        self.width = width
+        self.height = height
 
+    def update(self, player, map_width, map_height):
+        # Center camera on player
+        self.x = player.x - self.width // 2 + player.width // 2
+        self.y = player.y - self.height // 2 + player.height // 2
 
-class Button:
-    def __init__(self):
-        self.img1 = pygame.image.load("img/button-1.png")
-        self.img2 = pygame.image.load("img/button-2.png")
-        self.image = self.img1
-
-    def toggle(self):
-        if self.image == self.img1:
-            self.image = self.img2
-        elif self.image == self.img2:
-            self.image = self.img1
-
-    def render(self, window):
-        window.blit(self.image, (20,340))
+        # Keep camera within map bounds
+        if self.x < 0:
+            self.x = 0
+        if self.y < 0:
+            self.y = 0
+        if self.x > map_width * 32 - self.width:
+            self.x = map_width * 32 - self.width
+        if self.y > map_height * 32 - self.height:
+            self.y = map_height * 32 - self.height
