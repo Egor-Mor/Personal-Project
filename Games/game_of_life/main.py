@@ -9,9 +9,6 @@ pygame.display.set_caption("Game of life")
 screen = pygame.display.set_mode((340, 440), 0, 32)
 
 
-
-
-
 field = Field(Square, screen)
 frame = 0
 button = Button()
