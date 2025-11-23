@@ -355,13 +355,15 @@ class Game:
 
         return restart_btn
 
-    def run(self):
+    async def run(self):
+        import asyncio
         running = True
         move_timer = 0
         move_interval = FPS  # Move every FPS frames (so 1 move per second at 10 FPS)
 
         while running:
             clock.tick(60)  # Run at 60 FPS for smooth input
+            await asyncio.sleep(0)  # Yield control to event loop for pygbag
             move_timer += 1
 
             for event in pygame.event.get():

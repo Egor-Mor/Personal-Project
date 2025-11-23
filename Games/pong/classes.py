@@ -321,11 +321,13 @@ class Game:
             else:
                 self.paddle_right.vel_y = 0
 
-    def run(self):
+    async def run(self):
+        import asyncio
         running = True
 
         while running:
             clock.tick(FPS)
+            await asyncio.sleep(0)  # Yield control to event loop for pygbag
 
             keys = pygame.key.get_pressed()
             

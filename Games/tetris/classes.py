@@ -480,10 +480,13 @@ class Game:
             if self.move_piece(0, 1):
                 self.score += 1  # Bonus for soft drop
 
-    def run(self):
+    async def run(self):
+        import asyncio
         running = True
 
         while running:
+            clock.tick(FPS)
+            await asyncio.sleep(0)  # Yield control to event loop for pygbag
             keys = pygame.key.get_pressed()
 
             for event in pygame.event.get():
@@ -551,7 +554,4 @@ class Game:
                 self.render_game_over()
 
             pygame.display.update()
-
-
-            clock.tick(FPS)
 

@@ -507,10 +507,12 @@ class Game:
 
         return restart_btn, menu_btn
 
-    def run(self):
+    async def run(self):
+        import asyncio
         running = True
         while running:
             clock.tick(FPS)
+            await asyncio.sleep(0)  # Yield control to event loop for pygbag
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

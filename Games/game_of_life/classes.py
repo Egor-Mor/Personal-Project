@@ -1,4 +1,4 @@
-import pygame
+import pygame, sys
 
 class Sprite:
     image = None
@@ -125,3 +125,42 @@ class Button:
 
     def render(self, window):
         window.blit(self.image, (20,340))
+
+class Game:
+    def __init__(self):
+        pass
+    async def run(self):
+        import asyncio
+        clock = pygame.time.Clock()
+        pygame.display.set_caption("Game of life")
+        screen = pygame.display.set_mode((340, 440), 0, 32)
+
+        field = Field(Square, screen)
+        frame = 0
+        button = Button()
+
+        while True:
+            clock.tick(20)
+            await asyncio.sleep(0)  # Yield control to event loop for pygbag
+            frame += 1
+
+            if field.running and not frame % 2:
+                field.run()
+
+            screen.fill((118, 61, 217))
+            field.render_field()
+            button.render(screen)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse = pygame.mouse.get_pos()
+                    field.click_check(mouse)
+                    if 20 < mouse[0] < 320 and 340 < mouse[1] < 400:
+                        field.running = bool(abs(field.running - 1))
+                        button.toggle()
+
+            pygame.display.update()
