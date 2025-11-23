@@ -2,7 +2,7 @@ import pygame
 import random
 
 # Game settings
-FPS = 30
+FPS = 20
 clock = pygame.time.Clock()
 
 # Game states
