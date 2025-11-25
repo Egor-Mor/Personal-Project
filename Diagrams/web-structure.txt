@@ -1,0 +1,11 @@
+/
+├── games/
+│   ├── game-of-life
+│   ├── platformer
+│   ├── pong
+│   ├── snake
+│   ├── tetris
+│   └── type-speed
+├── login
+├── register
+└── about

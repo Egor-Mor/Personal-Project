@@ -1,0 +1,89 @@
+.
+├── Mock_project/
+│   └── ...
+├── Diagrams/
+│   ├── UI design/
+│   │   ├── form.png
+│   │   ├── about.png
+│   │   ├── game.png
+│   │   └── index.png
+│   ├── file_structure.txt
+│   └── web_structure.png
+├── Games/
+│   ├── game_of_life/
+│   │   ├── build/
+│   │   │   ├── web_cache/
+│   │   │   │   └── ...
+│   │   │   └── web/
+│   │   │       ├── favicon.png
+│   │   │       ├── game_of_life.apk
+│   │   │       └── index.html
+│   │   ├── img/
+│   │   │   └── ...
+│   │   ├── main.py
+│   │   └── classes.py
+│   ├── platformer/
+│   │   ├── build/
+│   │   │   ├── web_cache/
+│   │   │   │   └── ...
+│   │   │   └── web/
+│   │   │       ├── favicon.png
+│   │   │       ├── platformer.apk
+│   │   │       └── index.html
+│   │   ├── img/
+│   │   │   └── ...
+│   │   ├── main.py
+│   │   └── classes.py
+│   ├── pong/
+│   │   ├── build/
+│   │   │   ├── web_cache/
+│   │   │   │   └── ...
+│   │   │   └── web/
+│   │   │       ├── favicon.png
+│   │   │       ├── pong.apk
+│   │   │       └── index.html
+│   │   ├── main.py
+│   │   └── classes.py
+│   ├── snake/
+│   │   ├── build/
+│   │   │   ├── web_cache/
+│   │   │   │   └── ...
+│   │   │   └── web/
+│   │   │       ├── favicon.png
+│   │   │       ├── snake.apk
+│   │   │       └── index.html
+│   │   ├── main.py
+│   │   └── classes.py
+│   ├── tetris/
+│   │   ├── build/
+│   │   │   ├── web_cache/
+│   │   │   │   └── ...
+│   │   │   └── web/
+│   │   │       ├── favicon.png
+│   │   │       ├── tetris.apk
+│   │   │       └── index.html
+│   │   ├── main.py
+│   │   └── classes.py
+│   └── type_speed/
+│       ├── build/
+│       │   ├── web_cache/
+│       │   │   └── ...
+│       │   └── web/
+│       │       ├── favicon.png
+│       │       ├── type_speed.apk
+│       │       └── index.html
+│       ├── main.py
+│       └── classes.py
+├── app/
+│   ├── templates/
+│   │   ├── about.html
+│   │   ├── base.html
+│   │   ├── form.html
+│   │   ├── game.html
+│   │   ├── index.html
+│   │   ├── login.html
+│   │   └── register.html
+│   ├── app.py
+│   ├── database.db
+│   └── requirements.txt
+└── README.md
