@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Login page{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="card col-lg-3 col-md-5 col-xss-12 mx-auto py-2 my-2 shadow">
+            <h2 class="card-title">{% block l_r %}{% endblock %}</h2>
+            <form method="post" class="align-items-start px-2">
+                <div class="form-group mb-3">
+                    <label for="username-input" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username-input" placeholder="Username...">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="password-input" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password-input" placeholder="Password...">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+            {% block xtralnk %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}
