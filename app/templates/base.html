@@ -42,8 +42,13 @@
                 </li>
             </ul>
             <div class="col-md-3 text-end" bis_skin_checked="1">
-                <a href="{{url_for('login')}}" role="button" class="btn btn-outline-primary">Login</a>
-                <a href="{{url_for('register')}}" role="button" class="btn btn-outline-primary">Sign-up</a>
+                {% if current_user.is_authenticated %}
+                    <span class="me-2">Welcome, {{ current_user.username }}!</span>
+                    <a href="{{ url_for('logout') }}" role="button" class="btn btn-outline-secondary btn-sm">Logout</a>
+                {% else %}
+                    <a href="{{url_for('login')}}" role="button" class="btn btn-outline-primary">Login</a>
+                    <a href="{{url_for('register')}}" role="button" class="btn btn-outline-primary">Sign-up</a>
+                {% endif %}
             </div>
         </header>
     </div>
