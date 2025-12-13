@@ -1,5 +1,6 @@
-flask
-flask-sqlalchemy
-flask-login
-werkzeug
-
+Flask
+Flask-Login
+Flask-SQLAlchemy
+psycopg2-binary
+gunicorn
+python-dotenv

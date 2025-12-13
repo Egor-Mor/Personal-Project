@@ -1,13 +1,32 @@
 from flask import Flask, render_template, url_for, request, redirect, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.exceptions import HTTPException
-from os import listdir, environ, getenv
+import os
+import tempfile
 from models import db, User, Comment
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = getenv('SECRET_KEY') or 'dev-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+# --- START: serverless-safe instance path + config from env ---
+# Use a writable instance path for serverless (Vercel) where the repo is read-only.
+_writable_instance = os.environ.get("FLASK_INSTANCE_PATH")
+if not _writable_instance:
+    _writable_instance = os.path.join(tempfile.gettempdir(), "flask_instance")
+# ensure the directory exists (this is under /tmp on Vercel)
+os.makedirs(_writable_instance, exist_ok=True)
+
+app = Flask(__name__, instance_path=_writable_instance)
+
+# Read secrets and DB URL from environment (do not commit real secrets)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+
+# Prefer an external DB provided via DATABASE_URL; fall back to sqlite for local dev.
+db_url = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
+# Some platforms supply "postgres://..." — SQLAlchemy expects "postgresql://"
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# --- END: serverless-safe instance path + config from env ---
 
 # Initialize extensions
 db.init_app(app)
@@ -16,9 +35,11 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 class GameCard:
     def __init__(self, game_id, game_name, description, rating=0.0):
@@ -50,6 +71,7 @@ class GameCard:
             return self.rating
         total_rating = sum(comment.rating for comment in comments)
         return round(total_rating / len(comments), 1)
+
 
 game_of_life = GameCard(
     'game_of_life',
@@ -95,8 +117,9 @@ games = [
     typing_test
 ]
 
+
 def render_cards():
-    rendered=''''''
+    rendered = ''''''
     for card in games:
         rendered += card.return_HTML() + '\n'
     return rendered
@@ -107,18 +130,20 @@ def render_cards():
 def index():
     return render_template("index.html", rendered_cards=render_cards())
 
+
 @app.route("/about")
 def about():
     return render_template("about.html")
+
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
+
         user = User.query.filter_by(username=username).first()
-        
+
         if user and user.check_password(password):
             login_user(user)
             flash('Login successful!', 'success')
@@ -126,28 +151,30 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('index'))
         else:
             flash('Invalid username or password', 'error')
-    
+
     return render_template("login.html")
+
 
 @app.route("/register", methods=["POST", "GET"])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
+
         if User.query.filter_by(username=username).first():
             flash('Username already exists', 'error')
             return render_template("register.html")
-        
+
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        
+
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
-    
+
     return render_template("register.html")
+
 
 @app.route("/logout")
 @login_required
@@ -156,35 +183,38 @@ def logout():
     flash('You have been logged out', 'info')
     return redirect(url_for('index'))
 
+
 @app.route("/games/<game_id>")
 def game(game_id):
     comment_amount = request.args.get('com-am', 5, type=int)  # Get query parameter, default 5
-    
+
     game_obj = None
     for g in games:
         if g.game_id == game_id:
             game_obj = g
             break
-    
+
     if not game_obj:
         return 'Game not found'
-    
+
     total_comments_count = Comment.query.filter_by(game_id=game_id).count()
-    
-    db_comments = Comment.query.filter_by(game_id=game_id).order_by(Comment.created_at.desc()).limit(comment_amount).all()
+
+    db_comments = Comment.query.filter_by(game_id=game_id).order_by(Comment.created_at.desc()).limit(
+        comment_amount).all()
 
     avg_rating = game_obj.get_average_rating()
 
     user_comment = None
     if current_user.is_authenticated:
         user_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
-    
+
     return render_template("game.html",
-                          game=game_obj,
-                          comments=db_comments,
-                          total_comments_count=total_comments_count,
-                          rating=avg_rating,
-                          user_comment=user_comment)
+                           game=game_obj,
+                           comments=db_comments,
+                           total_comments_count=total_comments_count,
+                           rating=avg_rating,
+                           user_comment=user_comment)
+
 
 @app.route("/games/<game_id>/comment", methods=["POST"])
 @login_required
@@ -194,23 +224,21 @@ def add_comment(game_id):
         if g.game_id == game_id:
             game_obj = g
             break
-    
+
     if not game_obj:
         flash('Game not found', 'error')
         return redirect(url_for('index'))
-    
+
     content = request.form.get('content', '').strip()
     rating = request.form.get('rating', type=int)
-    
 
     if not content:
         flash('Comment cannot be empty', 'error')
         return redirect(url_for('game', game_id=game_id))
-    
+
     if not rating or rating < 1 or rating > 5:
         flash('Please select a rating (1-5 stars)', 'error')
         return redirect(url_for('game', game_id=game_id))
-    
 
     existing_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
     if existing_comment:
@@ -228,11 +256,14 @@ def add_comment(game_id):
         db.session.add(comment)
         db.session.commit()
         flash('Comment added!', 'success')
-    
+
     return redirect(url_for('game', game_id=game_id))
+
+
 @app.errorhandler(HTTPException)
 def error(e):
     return f'Error code is: {e}'
+
 
 if __name__ == "__main__":
     with app.app_context():
