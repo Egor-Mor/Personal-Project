@@ -30,6 +30,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize extensions
 db.init_app(app)
+try:
+    with app.app_context():
+        db.create_all()
+except Exception as e:
+    print("Warning: failed to create DB tables on import:", e)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
