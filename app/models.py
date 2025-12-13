@@ -26,6 +26,7 @@ class User(db.Model, UserMixin):
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Float, nullable=False)  # Rating from 1-5
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     game_id = db.Column(db.String(50), nullable=False)  # Links to game
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

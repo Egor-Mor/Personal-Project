@@ -1,11 +1,11 @@
 from flask import Flask, render_template, url_for, request, redirect, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.exceptions import HTTPException
-from os import listdir, environ
+from os import listdir, environ, getenv
 from models import db, User, Comment
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SECRET_KEY'] = getenv('SECRET_KEY') or 'dev-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -29,7 +29,6 @@ class GameCard:
         self.description = description
 
     def return_HTML(self):
-        # Generate the URL using Flask's url_for in application context
         with app.app_context():
             game_url = url_for("game", game_id=self.game_id)
         return f'''<div class="d-inline col-md-4 col-sm-6 col-xs-12 my-2">
@@ -43,9 +42,13 @@ class GameCard:
             </div>
         </div>'''
 
-    def recalculate_rating(self, rating):
-        self.rating = (self.rating * self.ratings + rating)/(self.ratings+1)
-        self.ratings += 1
+    def get_average_rating(self):
+        """Calculate average rating from database comments"""
+        comments = Comment.query.filter_by(game_id=self.game_id).all()
+        if not comments:
+            return self.rating  # Return default rating if no comments
+        total_rating = sum(comment.rating for comment in comments)
+        return round(total_rating / len(comments), 1)
 
 game_of_life = GameCard(
     'game_of_life',
@@ -156,14 +159,86 @@ def logout():
 
 @app.route("/games/<game_id>")
 def game(game_id):
-    for game in games:
-        if game.game_id == game_id:
-            return render_template("game.html",
-                                   game_name=game.game_id,
-                                   game_display_name=game.game_name,
-                                   rating=game.rating,
-                                   description=game.description)
-    return 'Game not found'
+    comment_amount = request.args.get('com-am', 5, type=int)  # Get query parameter, default 5
+    
+    # Find the game
+    game_obj = None
+    for g in games:
+        if g.game_id == game_id:
+            game_obj = g
+            break
+    
+    if not game_obj:
+        return 'Game not found'
+    
+    # Get total count of all comments (for display in "Reviews (n)")
+    total_comments_count = Comment.query.filter_by(game_id=game_id).count()
+    
+    # Get limited comments from database, ordered by most recent (based on com-am parameter)
+    db_comments = Comment.query.filter_by(game_id=game_id).order_by(Comment.created_at.desc()).limit(comment_amount).all()
+    
+    # Calculate average rating
+    avg_rating = game_obj.get_average_rating()
+    
+    # Get user's existing comment if logged in
+    user_comment = None
+    if current_user.is_authenticated:
+        user_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
+    
+    return render_template("game.html",
+                          game=game_obj,
+                          comments=db_comments,
+                          total_comments_count=total_comments_count,
+                          rating=avg_rating,
+                          user_comment=user_comment)
+
+@app.route("/games/<game_id>/comment", methods=["POST"])
+@login_required
+def add_comment(game_id):
+    # Find the game
+    game_obj = None
+    for g in games:
+        if g.game_id == game_id:
+            game_obj = g
+            break
+    
+    if not game_obj:
+        flash('Game not found', 'error')
+        return redirect(url_for('index'))
+    
+    content = request.form.get('content', '').strip()
+    rating = request.form.get('rating', type=int)
+    
+    # Validation
+    if not content:
+        flash('Comment cannot be empty', 'error')
+        return redirect(url_for('game', game_id=game_id))
+    
+    if not rating or rating < 1 or rating > 5:
+        flash('Please select a rating (1-5 stars)', 'error')
+        return redirect(url_for('game', game_id=game_id))
+    
+    # Check if user already commented on this game
+    existing_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
+    if existing_comment:
+        # Update existing comment
+        existing_comment.content = content
+        existing_comment.rating = rating
+        db.session.commit()
+        flash('Comment updated!', 'success')
+    else:
+        # Create new comment
+        comment = Comment(
+            content=content,
+            rating=rating,
+            game_id=game_id,
+            user_id=current_user.id
+        )
+        db.session.add(comment)
+        db.session.commit()
+        flash('Comment added!', 'success')
+    
+    return redirect(url_for('game', game_id=game_id))
 @app.errorhandler(HTTPException)
 def error(e):
     return f'Error code is: {e}'

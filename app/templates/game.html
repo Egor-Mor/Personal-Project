@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Game: {{ game_display_name }}{% endblock %}
+{% block title %}Game: {{ game.game_name }}{% endblock %}
 {% block content %}
     <div class="container-md mt-4">
         <div class="row">
@@ -7,24 +7,223 @@
                 <div class="card shadow">
                     <div class="card-body p-0">
                         <iframe 
-                            src="{{ url_for('static', filename='Games/' ~ game_name ~ '/build/web/index.html') }}"
-                            width="66%"
+                            src="{{ url_for('static', filename='Games/' ~ game.game_id ~ '/build/web/index.html') }}"
+                            width="100%"
                             height="600"
-                            style="border: none; min-height: 600px; width: 100%"
+                            style="border: none; min-height: 600px;"
                             allowfullscreen>
                         </iframe>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row mb-3">
+        <div class="row mb-3 mt-3">
             <div class="col-md-10 col-sm-12">
-                <h1 class="text-capitalize">{{ game_display_name }}</h1>
+                <h1 class="text-capitalize">{{ game.game_name }}</h1>
             </div>
             <div class="col-md-2 col-sm-12 text-end">
-                <h1>{{ rating }}/5</h1>
+                <h1>{{ rating }}/5 ⭐</h1>
             </div>
-            <p>{{ description }}</p>
+            <p class="mt-2">{{ game.description }}</p>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Comment Form (only if logged in) -->
+        {% if current_user.is_authenticated %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h3 class="card-title">Add a Review</h3>
+                            <form method="POST" action="{{ url_for('add_comment', game_id=game.game_id) }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Rating</label>
+                                    <div class="star-rating">
+                                        <input type="hidden" id="rating" name="rating" value="{{ user_comment.rating if user_comment else 0 }}" required>
+                                        <div class="stars" id="stars">
+                                            <span class="star" data-rating="1">⭐</span>
+                                            <span class="star" data-rating="2">⭐</span>
+                                            <span class="star" data-rating="3">⭐</span>
+                                            <span class="star" data-rating="4">⭐</span>
+                                            <span class="star" data-rating="5">⭐</span>
+                                        </div>
+                                        <span class="rating-text" id="rating-text">{% if user_comment %}{{ user_comment.rating }}/5{% else %}Click to rate{% endif %}</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="content" class="form-label">Comment</label>
+                                    <textarea class="form-control" id="content" name="content" rows="3" 
+                                              placeholder="Write your review..." required>{% if user_comment %}{{ user_comment.content }}{% endif %}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">{% if user_comment %}Update Review{% else %}Submit Review{% endif %}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <a href="{{ url_for('login') }}">Log in</a> to leave a review!
+            </div>
+        {% endif %}
+
+        <!-- Comments Section -->
+        <div class="row">
+            <div class="col-12">
+                <h2>Reviews ({{ total_comments_count }})</h2>
+                {% if comments %}
+                    {% for comment in comments %}
+                        <div class="card mb-3 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">{{ comment.author.username }}</h5>
+                                    <div>
+                                        <span class="comment-rating">
+                                            {% for i in range(5) %}
+                                                {% if i < comment.rating|int %}
+                                                    ⭐
+                                                {% else %}
+                                                    <span style="color: #ddd;">⭐</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        <small class="text-muted ms-2">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </div>
+                                </div>
+                                <p class="card-text">{{ comment.content }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-secondary">
+                        No reviews yet. Be the first to review this game!
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <style>
+        .star-rating {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stars {
+            display: flex;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .star {
+            font-size: 2rem;
+            color: #ddd;
+            transition: color 0.2s, transform 0.1s;
+            user-select: none;
+            line-height: 1;
+        }
+        .star:hover {
+            transform: scale(1.2);
+        }
+        .star.active {
+            color: #ffc107;
+        }
+        .star.inactive {
+            color: #e0e0e0;
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+        .rating-text {
+            font-size: 1rem;
+            color: #666;
+            min-width: 100px;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            const ratingInput = document.getElementById('rating');
+            const ratingText = document.getElementById('rating-text');
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    ratingInput.value = rating;
+                    updateStars(rating);
+                    ratingText.textContent = rating + '/5';
+                });
+                
+                star.addEventListener('mouseenter', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    highlightStars(rating);
+                });
+            });
+            
+            document.querySelector('.stars').addEventListener('mouseleave', function() {
+                const currentRating = parseInt(ratingInput.value) || 0;
+                updateStars(currentRating);
+            });
+            
+            function updateStars(rating) {
+                stars.forEach((star, index) => {
+                    // Remove all classes and inline styles first
+                    star.classList.remove('active', 'inactive');
+                    star.style.color = '';
+                    star.style.filter = '';
+                    star.style.opacity = '';
+                    
+                    // Add appropriate class based on position
+                    // If rating is 3, stars 0, 1, 2 (first 3) should be yellow
+                    // Stars 3, 4 (remaining 2) should be light gray/white
+                    if (index < rating) {
+                        star.classList.add('active'); // Yellow for selected stars (first N stars)
+                    } else {
+                        star.classList.add('inactive'); // Light gray for unselected stars (remaining stars)
+                    }
+                });
+                if (rating === 0) {
+                    ratingText.textContent = 'Click to rate';
+                    // Reset all stars to default gray when no rating
+                    stars.forEach(star => {
+                        star.classList.remove('active', 'inactive');
+                        star.style.color = '#ddd';
+                        star.style.filter = '';
+                        star.style.opacity = '';
+                    });
+                } else {
+                    ratingText.textContent = rating + '/5';
+                }
+            }
+            
+            function highlightStars(rating) {
+                stars.forEach((star, index) => {
+                    star.classList.remove('active', 'inactive');
+                    star.style.color = '';
+                    star.style.filter = '';
+                    star.style.opacity = '';
+                    
+                    if (index < rating) {
+                        star.classList.add('active'); // Yellow on hover (first N stars)
+                    } else {
+                        star.classList.add('inactive'); // Light gray on hover (remaining stars)
+                    }
+                });
+            }
+            
+            // Initialize with existing rating if editing
+            const currentRating = parseInt(ratingInput.value) || 0;
+            updateStars(currentRating);
+        });
+    </script>
 {% endblock %}
