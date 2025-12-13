@@ -25,7 +25,7 @@ FONT_SIZE = 32
 
 # Sample Lorem Ipsum text
 LOREM_IPSUM = (
-    "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod "
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla non lorem dolor. Sed eleifend mollis lobortis. Sed nec nisl eget nulla lobortis ultrices. Nam eu tellus egestas, hendrerit lacus eget, tempus nunc. Sed vitae enim est. Mauris at elementum leo. Curabitur dignissim posuere euismod. Praesent consectetur mi accumsan nibh finibus tempor. Pellentesque vel leo ex. Mauris nec sollicitudin lorem. Nullam commodo mauris vel mauris lacinia tincidunt. Pellentesque aliquet non nunc nec ultricies. Nulla vel placerat odio."
 )
 
 

@@ -31,57 +31,58 @@ class GameCard:
     def return_HTML(self):
         with app.app_context():
             game_url = url_for("game", game_id=self.game_id)
+            image_url = url_for("static", filename=f"img/{self.game_id}.png")
         return f'''<div class="d-inline col-md-4 col-sm-6 col-xs-12 my-2">
             <div class="card shadow m-3" >
+                <img class="card-img-top" src="{image_url}" alt="{self.game_name}" style="height: 300px; object-fit: cover;">
                 <div class="card-body">
                     <h3 class="card-title">{self.game_name}</h3>
                     <p class="card-text">{self.description}</p>
-                    <h4 class="card-subtitle">{self.rating:.1f}/5</h4>
+                    <h4 class="card-subtitle">{self.rating:.1f}/5 ⭐</h4>
                     <a class="btn btn-primary btn-sm my-2" href="{game_url}" type="button">Go to game</a>
                 </div>
             </div>
         </div>'''
 
     def get_average_rating(self):
-        """Calculate average rating from database comments"""
         comments = Comment.query.filter_by(game_id=self.game_id).all()
         if not comments:
-            return self.rating  # Return default rating if no comments
+            return self.rating
         total_rating = sum(comment.rating for comment in comments)
         return round(total_rating / len(comments), 1)
 
 game_of_life = GameCard(
     'game_of_life',
     "Conway's game of life",
-    "Basic game of life with back and white squares.",
+    "A zero-player cellular automaton where complex, self-organizing patterns emerge from simple rules governing cell birth, survival, and death on a grid.",
     4.6
 )
 platformer = GameCard(
     'platformer',
     "Star adventure",
-    "Collect 3 stars to complete the level, only some can finish the third!",
+    "A classic action game genre focused on precise movement, running, and jumping across suspended platforms to navigate challenging environments and overcome obstacles.",
     4.9
 )
 pong = GameCard(
     'pong',
     "Pong",
-    "Nostalgic game for 2 players.",
+    "The original two-dimensional sports video game that simulates table tennis, where players use paddles to hit a ball back and forth to score points against an opponent.",
     3.7)
 snake = GameCard(
     'snake',
     "Snake",
-    "Snake arcade: collect apples, and don`t bump into anything.",
+    "An action game where the player maneuvers a growing line to collect food, with the core challenge being to avoid collisions with the boundaries or the snake's own ever-lengthening body.",
     4.2)
 tetris = GameCard(
     'tetris',
     "Tetris",
-    "Game, where you learn to pack your luggage.",
+    "A timeless puzzle game requiring players to rotate and position falling geometric shapes (tetrominoes) to form complete horizontal lines and prevent the stack from reaching the top.",
     4.7
 )
 typing_test = GameCard(
     'typing_test',
     "Type speed testing",
-    "How fast can you actually type?",
+    "An application designed to measure and improve keyboarding skills by tracking a user's speed (Words Per Minute) and accuracy while transcribing provided text.",
     3.5
 )
 
@@ -134,12 +135,10 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Validation
         if User.query.filter_by(username=username).first():
             flash('Username already exists', 'error')
             return render_template("register.html")
         
-        # Create new user
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
@@ -161,7 +160,6 @@ def logout():
 def game(game_id):
     comment_amount = request.args.get('com-am', 5, type=int)  # Get query parameter, default 5
     
-    # Find the game
     game_obj = None
     for g in games:
         if g.game_id == game_id:
@@ -171,16 +169,12 @@ def game(game_id):
     if not game_obj:
         return 'Game not found'
     
-    # Get total count of all comments (for display in "Reviews (n)")
     total_comments_count = Comment.query.filter_by(game_id=game_id).count()
     
-    # Get limited comments from database, ordered by most recent (based on com-am parameter)
     db_comments = Comment.query.filter_by(game_id=game_id).order_by(Comment.created_at.desc()).limit(comment_amount).all()
-    
-    # Calculate average rating
+
     avg_rating = game_obj.get_average_rating()
-    
-    # Get user's existing comment if logged in
+
     user_comment = None
     if current_user.is_authenticated:
         user_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
@@ -195,7 +189,6 @@ def game(game_id):
 @app.route("/games/<game_id>/comment", methods=["POST"])
 @login_required
 def add_comment(game_id):
-    # Find the game
     game_obj = None
     for g in games:
         if g.game_id == game_id:
@@ -209,7 +202,7 @@ def add_comment(game_id):
     content = request.form.get('content', '').strip()
     rating = request.form.get('rating', type=int)
     
-    # Validation
+
     if not content:
         flash('Comment cannot be empty', 'error')
         return redirect(url_for('game', game_id=game_id))
@@ -218,16 +211,14 @@ def add_comment(game_id):
         flash('Please select a rating (1-5 stars)', 'error')
         return redirect(url_for('game', game_id=game_id))
     
-    # Check if user already commented on this game
+
     existing_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
     if existing_comment:
-        # Update existing comment
         existing_comment.content = content
         existing_comment.rating = rating
         db.session.commit()
         flash('Comment updated!', 'success')
     else:
-        # Create new comment
         comment = Comment(
             content=content,
             rating=rating,
@@ -245,5 +236,5 @@ def error(e):
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()  # Create tables if they don't exist
+        db.create_all()
     app.run(host='0.0.0.0')

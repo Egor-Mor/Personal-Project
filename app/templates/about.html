@@ -1,10 +1,43 @@
 {% extends "base.html" %}
 {% block title %}About page{% endblock %}
 {% block content %}
-    <div class="container-fluid">
-        <div class="card">
-            <img class="card-img-top" src="" alt="">
-            <div class="card-content"></div>
+    <div class="container py-5">
+        <div class="card shadow-lg">
+            <div class="row g-0">
+                <div class="col-md-4 bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center p-5">
+                    <img src="{{ url_for("static", filename="") }}" alt="">
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card-body p-4">
+                        <h2 class="card-title mb-3">About me</h2>
+
+                        <div class="card-text">
+                            <p>
+                                Hi! My name is Egor Morozov, and I'm currently a student at Gimnazija Bežigrad. I have a strong passion for coding,
+                                particularly in Python, which has become one of my favorite ways to spend my free time.
+                            </p>
+                            <p>
+                                I enjoy working on diverse projects that challenge my skills and creativity. this project utilizes Flask for web development and Pygame for game creation.
+                                Each project teaches me something new and helps me grow as a programmer.
+                            </p>
+                            <p>
+                                This website is product of my Personal Project for the IB program, where I'm combining
+                                my technical skills with my academic work to create something meaningful and functional.
+                            </p>
+                        </div>
+
+                        <div class="mt-4 d-flex gap-3">
+                            <a href="https://github.com/Egor-Mor" class="btn btn-outline-primary">
+                                My GitHub
+                            </a>
+                            <a href="mailto:egor.morozov@dijaki.gimb.com" class="btn btn-outline-primary">
+                                My Email
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
