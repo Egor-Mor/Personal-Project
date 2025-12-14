@@ -33,6 +33,14 @@
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pygame-web.github.io https://*.github.io; connect-src 'self' https://pygame-web.github.io https://*.github.io data: blob:;"
         }
       ]
     },

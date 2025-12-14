@@ -5,17 +5,57 @@
         <div class="row">
             <div class="col-12">
                 <div class="card shadow">
-                    <div class="card-body p-0">
+                    <div class="card-body p-0" style="position: relative; min-height: 600px;">
                         <iframe 
+                            id="game-frame-{{ game.game_id }}"
                             src="{{ url_for('static', filename='Games/' ~ game.game_id ~ '/build/web/index.html') }}"
                             width="100%"
                             height="600"
-                            style="border: none; min-height: 600px;"
+                            style="border: none; min-height: 600px; background: transparent; display: block;"
                             allowfullscreen
-                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                            loading="eager">
+                            allow="autoplay; fullscreen; microphone; camera"
+                            tabindex="0">
                         </iframe>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; color: #666; font-size: 14px; text-align: center; z-index: 1; display: none;" id="game-hint-{{ game.game_id }}">
+                            Click inside the game area to start
+                        </div>
                     </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const iframe = document.getElementById('game-frame-{{ game.game_id }}');
+                            const hint = document.getElementById('game-hint-{{ game.game_id }}');
+                            
+                            iframe.addEventListener('load', function() {
+                                setTimeout(function() {
+                                    hint.style.display = 'block';
+                                    setTimeout(function() {
+                                        hint.style.display = 'none';
+                                    }, 3000);
+                                }, 1000);
+                            });
+                            
+                            iframe.addEventListener('mouseenter', function() {
+                                iframe.focus();
+                            });
+                        });
+                    </script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const iframe = document.getElementById('game-frame-{{ game.game_id }}');
+                            iframe.addEventListener('load', function() {
+                                console.log('Game iframe loaded');
+                                try {
+                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                    console.log('Iframe document accessible');
+                                } catch(e) {
+                                    console.warn('Cannot access iframe document (CORS):', e);
+                                }
+                            });
+                            iframe.addEventListener('error', function() {
+                                console.error('Game iframe failed to load');
+                            });
+                        });
+                    </script>
                 </div>
             </div>
         </div>
