@@ -21,8 +21,11 @@ app = Flask(__name__,
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
 
-db_url = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
-if db_url.startswith("postgres://"):
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    db_path = os.path.join(tempfile.gettempdir(), 'app.db')
+    db_url = f'sqlite:///{db_path}'
+elif db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
