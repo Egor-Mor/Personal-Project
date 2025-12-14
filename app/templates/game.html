@@ -5,58 +5,16 @@
         <div class="row">
             <div class="col-12">
                 <div class="card shadow">
-                    <div class="card-body p-0" style="position: relative; min-height: 600px;">
+                    <div class="card-body p-0">
                         <iframe 
-                            id="game-frame-{{ game.game_id }}"
                             src="{{ url_for('static', filename='Games/' ~ game.game_id ~ '/build/web/index.html') }}"
                             width="100%"
                             height="600"
-                            style="border: none; min-height: 600px; background: transparent; display: block;"
+                            style="border: none; min-height: 600px;"
                             allowfullscreen
-                            allow="autoplay; fullscreen; microphone; camera"
-                            tabindex="0">
+                            allow="autoplay; fullscreen; microphone; camera">
                         </iframe>
-                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; color: #666; font-size: 14px; text-align: center; z-index: 1; display: none;" id="game-hint-{{ game.game_id }}">
-                            Click inside the game area to start
-                        </div>
                     </div>
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const iframe = document.getElementById('game-frame-{{ game.game_id }}');
-                            const hint = document.getElementById('game-hint-{{ game.game_id }}');
-                            
-                            iframe.addEventListener('load', function() {
-                                console.log('Game iframe loaded for {{ game.game_id }}');
-                                try {
-                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                    console.log('Iframe document accessible');
-                                    const scripts = iframeDoc.querySelectorAll('script');
-                                    console.log('Found', scripts.length, 'scripts in iframe');
-                                } catch(e) {
-                                    console.warn('Cannot access iframe document:', e);
-                                }
-                                
-                                setTimeout(function() {
-                                    hint.style.display = 'block';
-                                    setTimeout(function() {
-                                        hint.style.display = 'none';
-                                    }, 5000);
-                                }, 2000);
-                            });
-                            
-                            iframe.addEventListener('error', function(e) {
-                                console.error('Iframe error:', e);
-                            });
-                            
-                            iframe.addEventListener('mouseenter', function() {
-                                iframe.focus();
-                            });
-                            
-                            iframe.contentWindow.addEventListener('error', function(e) {
-                                console.error('Game script error:', e.message, e.filename, e.lineno);
-                            }, true);
-                        });
-                    </script>
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             const iframe = document.getElementById('game-frame-{{ game.game_id }}');
