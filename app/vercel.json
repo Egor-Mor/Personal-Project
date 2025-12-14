@@ -1,13 +1,33 @@
 {
-  "headers": [
+  "builds": [
+    {
+      "src": "/static/**/build/web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin"
+      }
+    },
+    {
+      "src": "/(.*\\.wasm)",
+      "headers": {
+        "Content-Type": "application/wasm"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "rewrites": [
     {
       "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin"
-        }
-      ]
+      "destination": "/index.html"
     }
   ]
 }
