@@ -24,6 +24,19 @@
       ]
     },
     {
+      "source": "/static/Games/(.*)\\.html",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
       "source": "/static/(.*)",
       "headers": [
         {
