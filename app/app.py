@@ -5,30 +5,28 @@ import os
 import tempfile
 from models import db, User, Comment
 
-# --- START: serverless-safe instance path + config from env ---
-# Use a writable instance path for serverless (Vercel) where the repo is read-only.
 _writable_instance = os.environ.get("FLASK_INSTANCE_PATH")
 if not _writable_instance:
     _writable_instance = os.path.join(tempfile.gettempdir(), "flask_instance")
-# ensure the directory exists (this is under /tmp on Vercel)
 os.makedirs(_writable_instance, exist_ok=True)
 
-app = Flask(__name__, instance_path=_writable_instance)
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+_static_folder = os.path.join(_base_dir, 'static')
+_template_folder = os.path.join(_base_dir, 'templates')
 
-# Read secrets and DB URL from environment (do not commit real secrets)
+app = Flask(__name__, 
+            instance_path=_writable_instance,
+            static_folder=_static_folder,
+            template_folder=_template_folder)
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
 
-# Prefer an external DB provided via DATABASE_URL; fall back to sqlite for local dev.
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
-# Some platforms supply "postgres://..." — SQLAlchemy expects "postgresql://"
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# --- END: serverless-safe instance path + config from env ---
-
-# Initialize extensions
 db.init_app(app)
 try:
     with app.app_context():
@@ -191,7 +189,7 @@ def logout():
 
 @app.route("/games/<game_id>")
 def game(game_id):
-    comment_amount = request.args.get('com-am', 5, type=int)  # Get query parameter, default 5
+    comment_amount = request.args.get('com-am', 5, type=int)
 
     game_obj = None
     for g in games:

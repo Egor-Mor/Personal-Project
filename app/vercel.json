@@ -1,22 +1,48 @@
 {
-"headers": [
-{
-"source": "/(.)\.wasm",
-"headers": [
-{
-"key": "Content-Type",
-"value": "application/wasm"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/static/Games/(.*)\\.apk",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/zip"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        }
+      ]
+    }
+  ]
 }
-]
-},
-{
-"source": "/(.)\.apk",
-"headers": [
-{
-"key": "Content-Type",
-"value": "application/wasm"
-}
-]
-}
-]
-}
+
