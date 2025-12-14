@@ -19,7 +19,15 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
+          "value": "GET, OPTIONS, HEAD"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        },
+        {
+          "key": "Accept-Ranges",
+          "value": "bytes"
         }
       ]
     },
@@ -36,7 +44,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors *; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; connect-src 'self' 'unsafe-inline' data: blob: https: http:; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' data: https: http:; img-src 'self' data: blob: https: http:;"
+          "value": "frame-ancestors *; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: wasm: https: http:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; connect-src 'self' 'unsafe-inline' data: blob: wasm: https: http:; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' data: https: http:; img-src 'self' data: blob: https: http:;"
         }
       ]
     },

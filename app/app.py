@@ -263,6 +263,29 @@ def add_comment(game_id):
     return redirect(url_for('game', game_id=game_id))
 
 
+@app.route('/static/Games/<path:filename>')
+def serve_game_static(filename):
+    from flask import send_from_directory, Response
+    import os
+    
+    games_dir = os.path.join(app.static_folder, 'Games')
+    file_path = os.path.join(games_dir, filename)
+    
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        response = send_from_directory(games_dir, filename)
+        
+        if filename.endswith('.apk'):
+            response.headers['Content-Type'] = 'application/zip'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS, HEAD'
+            response.headers['Access-Control-Allow-Headers'] = '*'
+            response.headers['Accept-Ranges'] = 'bytes'
+        
+        return response
+    else:
+        return 'File not found', 404
+
+
 @app.errorhandler(HTTPException)
 def error(e):
     return f'Error code is: {e}'
