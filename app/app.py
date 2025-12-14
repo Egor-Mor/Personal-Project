@@ -3,11 +3,11 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.exceptions import HTTPException
 import os
 import tempfile
+import hashlib
 from models import db, User, Comment
-import secrets
 
 _base_dir = os.path.dirname(os.path.abspath(__file__))
-_writable_instance = os.environ.get("FLASK_INSTANCE_PATH") or os.path.join(_base_dir, 'instance')
+_writable_instance = os.environ.get("FLASK_INSTANCE_PATH") or os.environ.get("TMPDIR") or tempfile.gettempdir()
 os.makedirs(_writable_instance, exist_ok=True)
 
 _static_folder = os.path.join(_base_dir, 'static')
@@ -19,31 +19,23 @@ app = Flask(__name__,
             template_folder=_template_folder)
 
 secret_env = os.environ.get('SECRET_KEY')
-secret_file = os.path.join(_writable_instance, 'secret_key')
+db_env = os.environ.get('DATABASE_URL')
 if secret_env:
     app.config['SECRET_KEY'] = secret_env
+elif db_env:
+    app.config['SECRET_KEY'] = hashlib.sha256(db_env.encode()).hexdigest()
 else:
-    try:
-        if os.path.exists(secret_file):
-            with open(secret_file, 'r') as f:
-                app.config['SECRET_KEY'] = f.read().strip()
-        else:
-            key = secrets.token_hex(32)
-            with open(secret_file, 'w') as f:
-                f.write(key)
-            app.config['SECRET_KEY'] = key
-    except Exception:
-        app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
+    app.config['SECRET_KEY'] = 'dev-static-key-change-in-production'
 
-db_url = os.environ.get('DATABASE_URL')
-if db_url:
+if db_env:
+    db_url = db_env
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 else:
     db_path = os.path.join(_writable_instance, 'app.db')
     db_url = f'sqlite:///{db_path}'
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -61,10 +53,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
-try:
-    login_manager.session_protection = "strong"
-except Exception:
-    pass
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -96,11 +84,11 @@ class GameCard:
 
     def get_average_rating(self):
         try:
-            comments = Comment.query.filter_by(game_id=self.game_id).all()
+            comments = Comment.query.with_entities(Comment.rating).filter_by(game_id=self.game_id).all()
             if not comments:
                 return float(self.rating)
-            total_rating = sum((comment.rating or 0) for comment in comments)
-            return round(total_rating / len(comments), 1)
+            total = sum((c[0] or 0) for c in comments)
+            return round(total / len(comments), 1)
         except Exception:
             return float(self.rating)
 
@@ -168,9 +156,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
         user = User.query.filter_by(username=username).first()
-
         if user and user.check_password(password):
             login_user(user)
             flash('Login successful!', 'success')
@@ -178,7 +164,6 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('index'))
         else:
             flash('Invalid username or password', 'error')
-
     return render_template("login.html")
 
 @app.route("/register", methods=["POST", "GET"])
@@ -186,19 +171,15 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
         if User.query.filter_by(username=username).first():
             flash('Username already exists', 'error')
             return render_template("register.html")
-
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
-
     return render_template("register.html")
 
 @app.route("/logout")
@@ -211,27 +192,19 @@ def logout():
 @app.route("/games/<game_id>")
 def game(game_id):
     comment_amount = request.args.get('com-am', 5, type=int)
-
     game_obj = None
     for g in games:
         if g.game_id == game_id:
             game_obj = g
             break
-
     if not game_obj:
         return 'Game not found'
-
     total_comments_count = Comment.query.filter_by(game_id=game_id).count()
-
-    db_comments = Comment.query.filter_by(game_id=game_id).order_by(Comment.created_at.desc()).limit(
-        comment_amount).all()
-
+    db_comments = Comment.query.filter_by(game_id=game_id).order_by(Comment.created_at.desc()).limit(comment_amount).all()
     avg_rating = game_obj.get_average_rating()
-
     user_comment = None
     if current_user.is_authenticated:
         user_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
-
     return render_template("game.html",
                            game=game_obj,
                            comments=db_comments,
@@ -247,22 +220,17 @@ def add_comment(game_id):
         if g.game_id == game_id:
             game_obj = g
             break
-
     if not game_obj:
         flash('Game not found', 'error')
         return redirect(url_for('index'))
-
     content = request.form.get('content', '').strip()
     rating = request.form.get('rating', type=int)
-
     if not content:
         flash('Comment cannot be empty', 'error')
         return redirect(url_for('game', game_id=game_id))
-
     if not rating or rating < 1 or rating > 5:
         flash('Please select a rating (1-5 stars)', 'error')
         return redirect(url_for('game', game_id=game_id))
-
     existing_comment = Comment.query.filter_by(game_id=game_id, user_id=current_user.id).first()
     if existing_comment:
         existing_comment.content = content
@@ -279,27 +247,22 @@ def add_comment(game_id):
         db.session.add(comment)
         db.session.commit()
         flash('Comment added!', 'success')
-
     return redirect(url_for('game', game_id=game_id))
 
 @app.route('/static/Games/<path:filename>')
 def serve_game_static(filename):
-    from flask import send_from_directory, Response
+    from flask import send_from_directory
     import os
-
     games_dir = os.path.join(app.static_folder, 'Games')
     file_path = os.path.join(games_dir, filename)
-
     if os.path.exists(file_path) and os.path.isfile(file_path):
         response = send_from_directory(games_dir, filename)
-
         if filename.endswith('.apk'):
             response.headers['Content-Type'] = 'application/zip'
             response.headers['Access-Control-Allow-Origin'] = '*'
             response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS, HEAD'
             response.headers['Access-Control-Allow-Headers'] = '*'
             response.headers['Accept-Ranges'] = 'bytes'
-
         return response
     else:
         return 'File not found', 404
