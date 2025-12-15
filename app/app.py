@@ -1,4 +1,5 @@
 from flask import Flask, render_template, url_for, request, redirect, flash
+from flask_session import Session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.exceptions import HTTPException
 import os
@@ -37,10 +38,17 @@ else:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('VERCEL') == '1':
     app.config['SESSION_COOKIE_SECURE'] = True
+
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_PERMANENT'] = False
+
+Session(app)
 
 db.init_app(app)
 try:
