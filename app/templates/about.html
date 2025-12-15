@@ -3,9 +3,14 @@
 {% block content %}
     <div class="container py-5">
         <div class="card shadow-lg">
-            <div class="row g-0">
-                <div class="col-md-4 bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center p-5">
-                    <img class="card-img-top" src="{{ url_for("static", filename="img/picture_me.png") }}" alt="Picture of me" style="width: 100%; object-fit: contain;">
+            <div class="row g-0 flex-md-row-reverse">
+                <div class="col-md-4">
+                    <img
+                        class="img-fluid rounded-0 rounded-md-start"
+                        src="{{ url_for("static", filename="img/picture_me.png") }}"
+                        alt="Picture of me"
+                        style="height: 100%; object-fit: cover;"
+                    >
                 </div>
 
                 <div class="col-md-8">
@@ -28,7 +33,7 @@
                         </div>
 
                         <div class="mt-4 d-flex gap-3">
-                            <a href="https://github.com/Egor-Mor" class="btn btn-outline-primary">
+                            <a href="github.com" class="btn btn-outline-primary">
                                 My GitHub
                             </a>
                             <a href="mailto:egor.morozov@dijaki.gimb.com" class="btn btn-outline-primary">
