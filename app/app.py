@@ -42,8 +42,6 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('VERCEL') == '1':
     app.config['SESSION_COOKIE_SECURE'] = True
 
-Session(app)
-
 db.init_app(app)
 try:
     with app.app_context():
