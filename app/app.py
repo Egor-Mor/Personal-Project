@@ -92,6 +92,17 @@ class GameCard:
         avg = self.get_average_rating()
         game_url = url_for("game", game_id=self.game_id)
         image_url = url_for("static", filename=f"img/{self.game_id}.png")
+        return f'''<div class="d-inline col-md-4 col-sm-6 col-xs-12 my-2">
+            <div class="card shadow m-3" >
+                <img class="card-img-top" src="{image_url}" alt="{self.game_name}" style="height: 300px; object-fit: cover;">
+                <div class="card-body">
+                    <h3 class="card-title">{self.game_name}</h3>
+                    <p class="card-text">{self.description}</p>
+                    <h4 class="card-subtitle">{avg:.1f}/5 ⭐</h4>
+                    <a class="btn btn-primary btn-sm my-2" href="{game_url}" type="button">Go to game</a>
+                </div>
+            </div>
+        </div>'''
 
     def get_average_rating(self):
         try:
@@ -147,6 +158,12 @@ games = [
     typing_test
 ]
 
+def render_cards():
+    rendered = ''
+    for card in games:
+        rendered += card.return_HTML() + '\n'
+    return rendered
+
 def execute_with_retry(query_func, max_retries=3, delay=1):
     for attempt in range(max_retries):
         try:
@@ -171,7 +188,7 @@ def index():
                     <div class="card-body">
                         <h3 class="card-title">{card.game_name}</h3>
                         <p class="card-text">{card.description}</p>
-                        <h4 class="card-subtitle">{card.get_average_rating()}/5 ⭐</h4>
+                        <h4 class="card-subtitle">{card.get_average_rating():.1f}/5 ⭐</h4>
                         <a class="btn btn-primary btn-sm my-2" href="{url_for('game', game_id=card.game_id)}" type="button">Go to game</a>
                     </div>
                 </div>
