@@ -74,7 +74,11 @@ def shutdown_session(exception=None):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except Exception as e:
+        app.logger.error(f"Error loading user {user_id}: {e}")
+        return None
 
 class GameCard:
     def __init__(self, game_id, game_name, description, rating=0.0):
@@ -88,17 +92,6 @@ class GameCard:
         avg = self.get_average_rating()
         game_url = url_for("game", game_id=self.game_id)
         image_url = url_for("static", filename=f"img/{self.game_id}.png")
-        return f'''<div class="d-inline col-md-4 col-sm-6 col-xs-12 my-2">
-            <div class="card shadow m-3" >
-                <img class="card-img-top" src="{image_url}" alt="{self.game_name}" style="height: 300px; object-fit: cover;">
-                <div class="card-body">
-                    <h3 class="card-title">{self.game_name}</h3>
-                    <p class="card-text">{self.description}</p>
-                    <h4 class="card-subtitle">{avg:.1f}/5 ⭐</h4>
-                    <a class="btn btn-primary btn-sm my-2" href="{game_url}" type="button">Go to game</a>
-                </div>
-            </div>
-        </div>'''
 
     def get_average_rating(self):
         try:
@@ -154,12 +147,6 @@ games = [
     typing_test
 ]
 
-def render_cards():
-    rendered = ''
-    for card in games:
-        rendered += card.return_HTML() + '\n'
-    return rendered
-
 def execute_with_retry(query_func, max_retries=3, delay=1):
     for attempt in range(max_retries):
         try:
@@ -173,9 +160,24 @@ def execute_with_retry(query_func, max_retries=3, delay=1):
 @app.route("/")
 @app.route("/games")
 def index():
-    def render_and_query():
-        return render_template("index.html", rendered_cards=render_cards())
-    return execute_with_retry(render_and_query)
+    try:
+        cards_html = render_cards()
+    except OperationalError as e:
+        cards_html = ""
+        for card in games:
+            cards_html += f'''<div class="d-inline col-md-4 col-sm-6 col-xs-12 my-2">
+                <div class="card shadow m-3" >
+                    <img class="card-img-top" src="{url_for('static', filename=f'img/{card.game_id}.png')}" alt="{card.game_name}" style="height: 300px; object-fit: cover;">
+                    <div class="card-body">
+                        <h3 class="card-title">{card.game_name}</h3>
+                        <p class="card-text">{card.description}</p>
+                        <h4 class="card-subtitle">{card.get_average_rating()}/5 ⭐</h4>
+                        <a class="btn btn-primary btn-sm my-2" href="{url_for('game', game_id=card.game_id)}" type="button">Go to game</a>
+                    </div>
+                </div>
+            </div>'''
+    
+    return render_template("index.html", rendered_cards=cards_html)
 
 @app.route("/about")
 def about():
