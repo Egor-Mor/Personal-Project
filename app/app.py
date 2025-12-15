@@ -1,9 +1,11 @@
-from flask import Flask, render_template, url_for, request, redirect, flash
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from werkzeug.exceptions import HTTPException
 import os
 import tempfile
 import hashlib
+import time
+from flask import Flask, render_template, url_for, request, redirect, flash, g
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.exceptions import HTTPException
+from sqlalchemy.exc import OperationalError
 from models import db, User, Comment
 
 _base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -42,7 +44,16 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('VERCEL') == '1':
     app.config['SESSION_COOKIE_SECURE'] = True
 
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_recycle': 300,
+    'pool_pre_ping': True,
+    'pool_size': 5,
+    'max_overflow': 10,
+    'pool_timeout': 30,
+}
+
 db.init_app(app)
+
 try:
     with app.app_context():
         db.create_all()
@@ -53,6 +64,13 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
+    if hasattr(g, 'my_local_connection'):
+        g.my_local_connection.close()
+        del g.my_local_connection
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -142,10 +160,22 @@ def render_cards():
         rendered += card.return_HTML() + '\n'
     return rendered
 
+def execute_with_retry(query_func, max_retries=3, delay=1):
+    for attempt in range(max_retries):
+        try:
+            return query_func()
+        except OperationalError as e:
+            if "Cannot assign requested address" in str(e) and attempt < max_retries - 1:
+                time.sleep(delay * (2 ** attempt))
+                continue
+            raise
+
 @app.route("/")
 @app.route("/games")
 def index():
-    return render_template("index.html", rendered_cards=render_cards())
+    def render_and_query():
+        return render_template("index.html", rendered_cards=render_cards())
+    return execute_with_retry(render_and_query)
 
 @app.route("/about")
 def about():
@@ -252,7 +282,6 @@ def add_comment(game_id):
 @app.route('/static/Games/<path:filename>')
 def serve_game_static(filename):
     from flask import send_from_directory
-    import os
     games_dir = os.path.join(app.static_folder, 'Games')
     file_path = os.path.join(games_dir, filename)
     if os.path.exists(file_path) and os.path.isfile(file_path):
