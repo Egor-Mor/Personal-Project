@@ -107,15 +107,7 @@
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h5 class="card-title mb-0">{{ comment.author.username }}</h5>
                                     <div>
-                                        <span class="comment-rating">
-                                            {% for i in range(5) %}
-                                                {% if i < comment.rating|int %}
-                                                    ⭐
-                                                {% else %}
-                                                    <span style="color: #ddd;">⭐</span>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </span>
+                                        <span class="comment-rating">{{ comment.rating }}/5</span>
                                         <small class="text-muted ms-2">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
                                     </div>
                                 </div>
